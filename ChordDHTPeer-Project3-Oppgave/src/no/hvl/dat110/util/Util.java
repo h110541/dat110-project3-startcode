@@ -22,10 +22,10 @@ import no.hvl.dat110.middleware.Node;
 import no.hvl.dat110.rpc.interfaces.NodeInterface;
 
 public class Util {
-	 
+
 	public static String activeIP = null;
-	public static int numReplicas = 4;  
-	
+	public static int numReplicas = 4;
+
 	/**
 	 * This method computes (lower <= id <= upper).
 	 * To use this method to compute (lower < id <= upper), ensure that the calling method increased the lower param by 1.
@@ -37,58 +37,66 @@ public class Util {
 	 * @return true if (lower <= id <= upper) or false otherwise
 	 */
 	public static boolean computeLogic(BigInteger id, BigInteger lower, BigInteger upper) {
-		
+
 		// a formula to check whether an id falls within the set {lower, upper} using the address size as our bound (modulos operation)
 		// it modifies 'upper' and 'id' when lower > upper e.g. set (6, 2) in mod 10 = {6, 7, 8, 9, 0, 1, 2}
-		
+
 		// implement: read the descriptions above
 		boolean cond = false;
 
-		
+		if (lower.compareTo(upper) > 0) {
+			BigInteger adrSize = Hash.addressSize();
+			BigInteger offset = adrSize.subtract(lower);
+			upper = upper.add(offset).mod(adrSize);
+			id = id.add(offset).mod(adrSize);
+			lower = BigInteger.ZERO;
+		}
+
+		cond = ((lower.compareTo(id) <= 0) && (id.compareTo(upper) <= 0));
 		return cond;
 	}
-	
+
 	public static List<String> toString(List<NodeInterface> list) throws RemoteException {
 		List<String> nodestr = new ArrayList<String>();
-		list.forEach(node -> 
+		list.forEach(node ->
 			{
 				nodestr.add(((Node)node).getNodeName());
 			}
 		);
-		
+
 		return nodestr;
 	}
-	
+
 	public static NodeInterface getProcessStub(String name, int port) {
-		
+
 		NodeInterface nodestub = null;
 		Registry registry = null;
 		try {
 			// Get the registry for this worker node
-			registry = LocateRegistry.getRegistry(port);		
-			
+			registry = LocateRegistry.getRegistry(port);
+
 			nodestub = (NodeInterface) registry.lookup(name);	// remote stub
-			
+
 		} catch (NotBoundException | RemoteException e) {
 			return null;			// if this call fails, then treat the node to have left the ring...or unavailable
 		}
-		
+
 		return nodestub;
 	}
-	
+
 	/**
 	 * This method is used when processes are running on a single computer
 	 * @return the registry for the found ip
-	 * @throws RemoteException 
-	 * @throws NumberFormatException 
+	 * @throws RemoteException
+	 * @throws NumberFormatException
 	 */
 	public static Registry tryIPSingleMachine(String nodeip) throws NumberFormatException, RemoteException {
-		
+
 		// try the tracker IP addresses and connect to any one available
 		String[] ips = StaticTracker.ACTIVENODES;
 		List<String> iplist = Arrays.asList(ips);
 		Collections.shuffle(iplist);
-		
+
 		Registry registry = null;
 		for (String ip : iplist) {
 			String ipaddress = ip.split(":")[0].trim();
@@ -102,20 +110,20 @@ public class Util {
 				return registry;
 			}
 		}
-		
+
 		return registry;
 
 	}
-	
+
 	public static Map<String, Integer> getProcesses(){
-		
+
 		Map<String, Integer> processes = new HashMap<>();
 		processes.put("process1", 9091);
 		processes.put("process2", 9092);
 		processes.put("process3", 9093);
 		processes.put("process4", 9094);
 		processes.put("process5", 9095);
-		
+
 		return processes;
 	}
 
